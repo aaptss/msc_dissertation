@@ -1,7 +1,7 @@
 clear modelParams
 mp = mPara32(1,32);
 
-baseFolder= "D:\OneDrive\bmstu\!! Master's thesis\00 04 Thesis\EIT_MSc_aaptss\data\";
+baseFolder= "D:\OneDrive\bmstu\!! Master's thesis\00 00 disser\EIT_MSc_aaptss\data\";
 cmslHomo = strcat(baseFolder, "data_homogen\");
 cmslInhomo=strcat(baseFolder, "data_inhomogen\");
 
@@ -20,10 +20,10 @@ vhcomsol.meas(30:end) = -vhcomsol.meas(30:end);
     vh = fwd_solve(imgh);
 %% solve for inhomogen
     imgi = imgh;
-%     imgi.elem_data(fmdl.mat_idx{1})= mp.sigma.softT; % soft tissue
-    imgi.elem_data(fmdl.mat_idx{2})= mp.sigma.heart; % heart
+    imgi.elem_data(fmdl.mat_idx{1})= mp.sigma.softT / mp.sigma.softT + 0,995; % soft tissue
+    imgi.elem_data(fmdl.mat_idx{2})= mp.sigma.heart*20; % heart
     imgi.elem_data(fmdl.mat_idx{3})= mp.sigma.lung; % llung
-    imgi.elem_data(fmdl.mat_idx{4})= mp.sigma.lung; % rlung
+    imgi.elem_data(fmdl.mat_idx{4})= mp.sigma.lung / 1000; % rlung
 
     vi = fwd_solve(imgi);
 %% 
@@ -47,11 +47,18 @@ imdl.RtR_prior = @laplace_image_prior;
 imdl.inv_solve.max_iterations= 50;
 imdl.hyperparameter.value = 1e-2;
 imdl.inv_solve.term_tolerance = 1e-1;
-
+tic
 cmslimgcmsl = inv_solve(imdl,vhcomsol, vicomsol);
+toc
+tic
 cmslimgeido = inv_solve(imdl,vhcomsol, vi);
+toc
+tic
 eidoimgcmsl = inv_solve(imdl,vh, vicomsol);
+toc
+tic
 eidoimgeido = inv_solve(imdl,vh, vi);
+toc
 
 % 
 % cmslimgcmsl = inv_solve(imdl,vhcomsol.meas, vicomsol.meas);
@@ -70,3 +77,25 @@ title('eidors - comsol');
 figure
 show_fem(eidoimgeido)
 title('eidors - eidors');
+%%
+% tic
+% imdl= mk_common_model('f3cr',32);
+% imdl.stimuation = fmdl.stimulation;
+% imdl.fwd_model = fmdl;
+% 
+%    imdl.R_prior = @prior_tikhonov;
+%    
+%    imdl.RtR_prior = calc_RtR_prior(imdl);
+%    imdl.solve= @inv_solve_cg;
+%    imdl.reconst_type= 'absolute';
+%    imdl.inv_solve.max_iterations= 15;
+%    imdl.hyperparameter.value = 1e-1;
+%    imdl.inv_solve.term_tolerance = 1e-3;
+% toc
+% show_fem(imdl.fwd_model);
+% 
+%  img=inv_solve(imdl,vi); % ***
+%  show_fem(img,1);
+%  toc
+%  toc
+ toc
